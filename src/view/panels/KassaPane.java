@@ -9,6 +9,8 @@ import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
@@ -29,6 +31,7 @@ public class KassaPane extends GridPane implements ObserverActivator {
     private TextField artikelCodeField;
     private Controller service = new Controller();
     private ArrayList<Observer> observers = new ArrayList<>();
+    private Label error = new Label("");
 
     public KassaPane() {
         setTable();
@@ -40,19 +43,15 @@ public class KassaPane extends GridPane implements ObserverActivator {
         this.setPadding(new Insets(5, 5, 5, 5));
         this.setVgap(5);
         this.setHgap(5);
-
         this.add(new Label("Artikel code:"), 0, 1, 1, 1);
         artikelCodeField = new TextField();
         this.add(artikelCodeField, 1, 1, 1, 1);
-        btnAdd = new Button("Add");
-        btnAdd.isDefaultButton();
-        btnAdd.setText("Add");
-        btnAdd.setOnAction(new Save());
-        add(btnAdd, 2, 1, 2, 1);
-
-
+        artikelCodeField.setOnKeyPressed(new Save());
         table = new TableView<>();
         table.setPrefWidth(REMAINING);
+        this.add(error, 0, 0, 1, 1);
+        error = new Label();
+        error.setVisible(false);
 
         setTable(service.getDbFactory());
 
@@ -68,29 +67,23 @@ public class KassaPane extends GridPane implements ObserverActivator {
 
         setDoubleClickAction(MOUSE_CLICKED);
 
-
-
     }
 
-    class Save implements EventHandler<ActionEvent> {
+    class Save implements EventHandler<KeyEvent> {
 
         @Override
-        public void handle(ActionEvent e) {
-            Artikel a =  service.getDbFactory().getArtikelByCode(artikelCodeField.getText());
-            service.getDomainFactory().createRekeningFromArtikel(a);
-            service.getDbFactory().addArtikelToRekening(service.getDomainFactory().getRekening());
-            setTableData(service.getDbFactory());
-        }
-    }
-
-    class Cancel implements EventHandler<ActionEvent> {
-
-        @Override
-        public void handle(ActionEvent e) {
-            btnCancel.setOnAction((event) -> {
-                Stage stage = (Stage) btnCancel.getScene().getWindow();
-                stage.close();
-            });
+        public void handle(KeyEvent e) {
+            if(e.getCode() == KeyCode.ENTER){
+                try {
+                    Artikel a = service.getDbFactory().getArtikelByCode(artikelCodeField.getText());
+                    Rekening r = service.getDomainFactory().createRekeningFromArtikel(a);
+                    service.getDbFactory().addArtikelToRekening(r);
+                    setTableData(service.getDbFactory());
+                }catch (Exception exception){
+                    error.setText(exception.getMessage());
+                    error.setVisible(true);
+                }
+            }
         }
     }
 

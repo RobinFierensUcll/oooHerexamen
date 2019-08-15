@@ -83,7 +83,7 @@ public class DbArtikelsTxt implements DbArtikels {
                return artikel;
            }
        }
-       return null;
+       throw new DbException("Artikel niet gevonden");
     }
 
 
